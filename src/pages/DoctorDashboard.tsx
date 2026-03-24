@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 
 const DoctorDashboard = () => (
@@ -39,7 +40,7 @@ const DoctorDashboard = () => (
             placeholder="Enter HP-XXXX code"
             className="flex-1 px-4 py-2.5 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
-          <a href="/passport/demo" className="btn-primary whitespace-nowrap">Open Passport</a>
+          <Link to="/passport/demo" className="btn-primary whitespace-nowrap">Open Passport</Link>
         </div>
 
         <p className="text-xs text-muted-foreground mt-4">No login required for patients</p>

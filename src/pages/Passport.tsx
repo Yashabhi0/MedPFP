@@ -2,7 +2,7 @@ import { ShieldAlert, Pill, Activity, BarChart3, PhoneCall, HeartPulse } from 'l
 
 const Passport = () => (
   <div className="min-h-screen bg-background">
-    {/* Minimal top bar */}
+    {/* Intentionally smaller — read-only view */}
     <nav className="h-14 bg-card border-b border-border flex items-center justify-between px-4">
       <div className="flex items-center gap-2 text-primary font-bold text-sm">
         <HeartPulse className="w-5 h-5" />
@@ -93,6 +93,7 @@ const Passport = () => (
         <a href="tel:+919876543210" className="btn-primary inline-block text-sm">Call Now</a>
       </div>
 
+      <p className="text-center text-xs text-muted-foreground">Last updated: March 2025</p>
       <p className="text-center text-xs text-muted-foreground py-4">Powered by Health Passport</p>
     </div>
   </div>

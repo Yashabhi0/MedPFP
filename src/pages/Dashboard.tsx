@@ -1,5 +1,10 @@
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Bell, ShieldAlert, Pill, Edit } from 'lucide-react';
 import Navbar from '../components/Navbar';
+
+const COMING_SOON = "Coming soon — full editing available after backend integration.";
 
 const medicines = [
   { name: 'Metformin', dosage: '500mg', frequency: 'Twice daily' },
@@ -7,7 +12,13 @@ const medicines = [
   { name: 'Atorvastatin', dosage: '20mg', frequency: 'Once daily' },
 ];
 
-const Dashboard = () => (
+const Dashboard = () => {
+  const qrPattern = useMemo(
+    () => Array.from({ length: 49 }, () => Math.random() > 0.4),
+    []
+  );
+
+  return (
   <div className="min-h-screen bg-background">
     <Navbar
       links={[
@@ -33,9 +44,9 @@ const Dashboard = () => (
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button className="btn-secondary text-sm">+ Add Medicine</button>
-          <a href="/dashboard/upload" className="btn-secondary text-sm">+ Upload Report</a>
-          <button className="btn-secondary text-sm">View QR</button>
+          <button className="btn-secondary text-sm" onClick={() => toast.info(COMING_SOON)}>+ Add Medicine</button>
+          <Link to="/dashboard/upload" className="btn-secondary text-sm">+ Upload Report</Link>
+          <button className="btn-secondary text-sm" onClick={() => document.getElementById('qr-card')?.scrollIntoView({ behavior: 'smooth' })}>View QR</button>
         </div>
       </div>
 
@@ -64,17 +75,17 @@ const Dashboard = () => (
                 <span key={a} className="badge-allergy">{a}</span>
               ))}
             </div>
-            <button className="btn-ghost text-sm">+ Add Allergy</button>
+            <button className="btn-ghost text-sm" onClick={() => toast.info(COMING_SOON)}>+ Add Allergy</button>
           </div>
 
           {/* Conditions */}
           <div className="card-base">
-            <h3 className="mb-3">Chronic Conditions</h3>
+            <h3 className="mb-4">Chronic Conditions</h3>
             <div className="flex flex-wrap gap-2 mb-3">
               <span className="badge-condition">Type 2 Diabetes (2019)</span>
               <span className="badge-condition">Hypertension (2021)</span>
             </div>
-            <button className="btn-ghost text-sm">+ Add Condition</button>
+            <button className="btn-ghost text-sm" onClick={() => toast.info(COMING_SOON)}>+ Add Condition</button>
           </div>
 
           {/* Medicines */}
@@ -92,21 +103,21 @@ const Dashboard = () => (
                 </div>
               ))}
             </div>
-            <button className="btn-secondary text-sm mt-4">+ Add Medicine</button>
+            <button className="btn-secondary text-sm mt-4" onClick={() => toast.info(COMING_SOON)}>+ Add Medicine</button>
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="lg:col-span-4">
-          <div className="card-base text-center sticky top-24">
+          <div id="qr-card" className="card-base text-center sticky top-24">
             <h3 className="mb-4">Your Health Passport QR</h3>
             {/* Mock QR */}
             <div className="w-48 h-48 mx-auto mb-4 bg-dark rounded-xl flex items-center justify-center">
               <div className="grid grid-cols-7 gap-0.5">
-                {Array.from({ length: 49 }).map((_, i) => (
+                {qrPattern.map((filled, i) => (
                   <div
                     key={i}
-                    className={`w-4 h-4 rounded-sm ${Math.random() > 0.4 ? 'bg-white' : 'bg-transparent'}`}
+                    className={`w-4 h-4 rounded-sm ${filled ? 'bg-white' : 'bg-transparent'}`}
                   />
                 ))}
               </div>
@@ -119,6 +130,7 @@ const Dashboard = () => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default Dashboard;

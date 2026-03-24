@@ -57,7 +57,7 @@ const Navbar = ({ links = [], rightContent }: NavbarProps) => {
               {link.label}
             </Link>
           ))}
-          <div className="flex flex-col gap-3">{rightContent}</div>
+          <div className="flex flex-col gap-3" onClick={() => setMobileOpen(false)}>{rightContent}</div>
         </div>
       )}
     </nav>

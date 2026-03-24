@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Sparkles, Send } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
@@ -33,7 +34,7 @@ const DoctorPatients = () => (
           <h2 className="mb-4">Recently Accessed Patients</h2>
           <div className="space-y-3">
             {patients.map((p) => (
-              <div key={p.name} className="card-base card-hover flex items-center gap-4 p-4">
+              <div key={p.name} className="card-base card-hover flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0">
                   {p.initials}
                 </div>
@@ -41,7 +42,7 @@ const DoctorPatients = () => (
                   <p className="font-semibold text-dark text-sm">{p.name}, {p.age}</p>
                   <p className="text-xs text-muted-foreground">{p.condition} · {p.time}</p>
                 </div>
-                <a href="/passport/demo" className="btn-ghost text-xs whitespace-nowrap">View Passport</a>
+                <Link to="/passport/demo" className="btn-ghost text-xs whitespace-nowrap">View Passport</Link>
               </div>
             ))}
           </div>

@@ -38,7 +38,7 @@ const Landing = () => {
             </p>
             <button
               onClick={() => setModalOpen(true)}
-              className="bg-white text-primary font-bold rounded-full px-8 py-3 shadow-lg hover:shadow-xl transition-all text-lg animate-fade-in-up animate-delay-200"
+              className="btn-primary text-lg animate-fade-in-up animate-delay-200"
             >
               Get Started →
             </button>
@@ -68,8 +68,12 @@ const Landing = () => {
             <div className="flex flex-wrap gap-2 mb-2">
               <span className="badge-allergy text-xs">Penicillin</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-3">
               <span className="badge-medicine text-xs">Metformin 500mg</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-primary shrink-0" />
+              <p className="text-xs italic text-primary">AI Summary available</p>
             </div>
           </div>
         </div>
