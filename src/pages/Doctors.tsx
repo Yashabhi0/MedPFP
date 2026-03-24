@@ -48,7 +48,12 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 function mapsUrl(lat: number, lng: number, name: string) {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}&center=${lat},${lng}`;
+  if (lat !== 0 && lng !== 0) {
+    // Real coordinates — drop a pin at exact location
+    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  }
+  // Fallback — search by name
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`;
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────
@@ -212,20 +217,14 @@ export default function Doctors() {
 
                 {/* Actions */}
                 <div className="flex gap-2 mt-auto pt-1">
-                  {doc.lat !== 0 ? (
-                    <a
-                      href={mapsUrl(doc.lat, doc.lng, doc.name)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-secondary text-xs flex items-center gap-1.5 flex-1 justify-center"
-                    >
-                      <Map className="w-3.5 h-3.5" /> View on Maps
-                    </a>
-                  ) : (
-                    <button className="btn-secondary text-xs flex items-center gap-1.5 flex-1 justify-center">
-                      <Map className="w-3.5 h-3.5" /> View on Maps
-                    </button>
-                  )}
+                  <a
+                    href={mapsUrl(doc.lat, doc.lng, doc.hospital ?? doc.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary text-xs flex items-center gap-1.5 flex-1 justify-center"
+                  >
+                    <Map className="w-3.5 h-3.5" /> View on Maps
+                  </a>
                   {doc.phone ? (
                     <a href={`tel:${doc.phone}`}
                       className="btn-secondary text-xs flex items-center gap-1.5 flex-1 justify-center">
