@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
 import Landing from "./pages/Landing";
+import Auth from "./pages/Auth";
+import SSOCallback from "./pages/SSOCallback";
 import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import DoctorDashboard from "./pages/DoctorDashboard";
@@ -18,6 +20,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Auth />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/sso-callback" element={<SSOCallback />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/upload" element={<Upload />} />
           <Route path="/doctor" element={<DoctorDashboard />} />

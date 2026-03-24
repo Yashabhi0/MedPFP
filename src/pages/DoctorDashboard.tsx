@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import ProfileDropdown from '../components/auth/ProfileDropdown';
 
 const DoctorDashboard = () => (
   <div className="min-h-screen bg-background">
@@ -10,7 +11,7 @@ const DoctorDashboard = () => (
         { label: 'My Patients', to: '/doctor/patients' },
       ]}
       rightContent={
-        <div className="w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold">DR</div>
+        <ProfileDropdown initials="DR" color="#9FB4BB" />
       }
     />
 

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   UploadCloud, Sparkles, QrCode, ShieldAlert, FileScan,
   Pill, Activity, PhoneCall, ArrowRight
@@ -8,7 +9,7 @@ import Footer from '../components/Footer';
 import RoleModal from '../components/RoleModal';
 
 const Landing = () => {
-  const [modalOpen, setModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -35,7 +36,7 @@ const Landing = () => {
           <button
             className="font-bold rounded-full px-5 py-2 text-sm shadow-md transition-all hover:scale-105"
             style={{ backgroundColor: '#F2EDE6', color: '#2E2E2E' }}
-            onClick={() => setModalOpen(true)}
+            onClick={() => navigate('/auth')}
           >
             Get Started
           </button>
@@ -95,7 +96,7 @@ const Landing = () => {
             {/* CTA */}
             <div className="flex items-center gap-4 mb-10 animate-fade-in-up animate-delay-300">
               <button
-                onClick={() => setModalOpen(true)}
+                onClick={() => navigate('/auth')}
                 className="inline-flex items-center gap-2 font-bold rounded-full px-7 py-3.5 text-sm shadow-xl transition-all duration-200 hover:scale-105 hover:shadow-2xl"
                 style={{ backgroundColor: '#D8A17A', color: '#F2EDE6' }}
               >
@@ -327,7 +328,6 @@ const Landing = () => {
       </section>
 
       <Footer />
-      <RoleModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   );
 };
