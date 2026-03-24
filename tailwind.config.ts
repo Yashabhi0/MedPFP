@@ -55,9 +55,10 @@ export default {
           DEFAULT: "hsl(var(--dark))",
           foreground: "hsl(var(--dark-foreground))",
         },
-        amber: {
-          DEFAULT: "hsl(var(--amber))",
-          foreground: "hsl(var(--amber-foreground))",
+        warm: {
+          primary: "hsl(var(--warm-primary))",
+          secondary: "hsl(var(--warm-secondary))",
+          dark: "hsl(var(--warm-dark))",
         },
       },
       borderRadius: {

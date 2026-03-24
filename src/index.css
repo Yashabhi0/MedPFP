@@ -4,30 +4,31 @@
 
 @layer base {
   :root {
-    --background: 37 33% 96%;
-    --foreground: 0 0% 29%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 29%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 29%;
-    --primary: 172 58% 39%;
-    --primary-foreground: 0 0% 100%;
-    --primary-light: 160 46% 93%;
-    --secondary: 157 22% 46%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 37 33% 96%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 160 46% 93%;
-    --accent-foreground: 172 58% 39%;
-    --destructive: 355 78% 56%;
+    --background: 200 16% 63%;          /* #8FA7B0 */
+    --foreground: 0 0% 18%;             /* #2E2E2E */
+    --card: 33 33% 94%;                 /* #F2EDE6 */
+    --card-foreground: 0 0% 18%;        /* #2E2E2E */
+    --popover: 33 33% 94%;              /* #F2EDE6 */
+    --popover-foreground: 0 0% 18%;     /* #2E2E2E */
+    --primary: 30 52% 79%;              /* #E8C9A8 — CTA buttons */
+    --primary-foreground: 0 0% 18%;     /* #2E2E2E — text on primary buttons */
+    --primary-light: 145 100% 93%;      /* #BCFFD6 — glass panels */
+    --secondary: 200 14% 66%;           /* #9FB4BB — muted surfaces */
+    --secondary-foreground: 0 0% 18%;   /* #2E2E2E */
+    --muted: 33 20% 83%;                /* #D9D1C7 */
+    --muted-foreground: 0 0% 42%;       /* #6B6B6B */
+    --accent: 145 100% 93%;             /* #BCFFD6 — glass accent */
+    --accent-foreground: 0 0% 18%;      /* #2E2E2E */
+    --destructive: 355 78% 56%;         /* keep red for allergy/alert — unchanged */
     --destructive-foreground: 0 0% 100%;
-    --amber: 43 74% 66%;
-    --amber-foreground: 30 50% 30%;
-    --dark: 197 37% 24%;
-    --dark-foreground: 0 0% 100%;
-    --border: 0 0% 91%;
-    --input: 0 0% 91%;
-    --ring: 172 58% 39%;
+    --warm-primary: 25 46% 66%;         /* #D8A17A — hover/highlight */
+    --warm-secondary: 22 42% 57%;       /* #C4875E — active states */
+    --warm-dark: 20 45% 45%;            /* #A8643E — bold badges */
+    --dark: 0 0% 18%;                   /* #2E2E2E — headings */
+    --dark-foreground: 0 0% 100%;       /* #FFFFFF */
+    --border: 30 16% 82%;               /* #D9D1C7 */
+    --input: 30 16% 82%;                /* #D9D1C7 */
+    --ring: 30 52% 79%;                 /* #E8C9A8 */
     --radius: 0.75rem;
   }
 }
@@ -41,15 +42,19 @@
     font-family: 'Inter', sans-serif;
     font-size: 15px;
     line-height: 1.6;
+    background-color: #8FA7B0;
   }
   h1 {
-    @apply text-4xl font-bold text-dark;
+    @apply text-4xl font-bold;
+    color: #2E2E2E;
   }
   h2 {
-    @apply text-2xl font-semibold text-dark;
+    @apply text-2xl font-semibold;
+    color: #2E2E2E;
   }
   h3 {
-    @apply text-lg font-semibold text-dark;
+    @apply text-lg font-semibold;
+    color: #2E2E2E;
   }
 }
 
@@ -66,6 +71,9 @@
   .card-upload {
     @apply border-dashed border-2 border-primary bg-accent rounded-2xl p-6;
   }
+  .card-glass {
+    @apply bg-accent/60 backdrop-blur-md border border-accent rounded-2xl p-6;
+  }
   .badge-allergy {
     @apply bg-red-100 text-red-700 font-bold rounded-full px-3 py-1 text-sm;
   }
@@ -73,25 +81,54 @@
     @apply bg-amber-100 text-amber-800 rounded-full px-3 py-1 text-sm;
   }
   .badge-medicine {
-    @apply bg-accent text-primary rounded-full px-3 py-1 text-sm;
+    @apply bg-accent text-foreground rounded-full px-3 py-1 text-sm;
   }
   .badge-blood {
     @apply bg-destructive text-white font-bold rounded-full px-4 py-2 text-lg;
   }
+  .badge-warm {
+    @apply text-white font-bold rounded-full px-3 py-1 text-sm;
+    background-color: #A8643E;
+  }
   .btn-primary {
-    @apply bg-primary text-white rounded-full px-6 py-2.5 font-semibold hover:opacity-90 transition-all;
+    @apply bg-primary text-primary-foreground rounded-full px-6 py-2.5 font-semibold transition-all;
+    background-color: #E8C9A8;
+    color: #2E2E2E;
+  }
+  .btn-primary:hover {
+    background-color: #D8A17A;
   }
   .btn-secondary {
-    @apply border border-primary text-primary bg-transparent rounded-full px-6 py-2.5 font-semibold hover:bg-accent transition-all;
+    @apply border text-foreground bg-transparent rounded-full px-6 py-2.5 font-semibold transition-all;
+    border-color: #D9D1C7;
+  }
+  .btn-secondary:hover {
+    background-color: #F2EDE6;
   }
   .btn-ghost {
-    @apply text-primary font-semibold hover:opacity-70 transition-all;
+    @apply font-semibold hover:opacity-70 transition-all;
+    color: #A8643E;
   }
   .btn-danger {
     @apply bg-destructive text-white rounded-full px-6 py-2.5 font-semibold hover:opacity-90 transition-all;
   }
   .card-hover {
     @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
+  }
+  .text-warm {
+    color: #D8A17A;
+  }
+  .text-warm-dark {
+    color: #A8643E;
+  }
+  .bg-warm {
+    background-color: #E8C9A8;
+  }
+  .bg-warm-dark {
+    background-color: #A8643E;
+  }
+  .border-warm {
+    border-color: #D8A17A;
   }
 }
 
@@ -108,10 +145,10 @@
 
 @keyframes pulse-border {
   0%, 100% {
-    border-color: hsl(172, 58%, 39%);
+    border-color: hsl(30, 52%, 79%);
   }
   50% {
-    border-color: hsl(172, 58%, 60%);
+    border-color: hsl(25, 46%, 66%);
   }
 }
 
