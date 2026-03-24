@@ -1,32 +1,25 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UploadCloud, Loader2, Sparkles, CheckCircle } from 'lucide-react';
+import { Loader2, Sparkles, CheckCircle } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import Navbar from '../components/Navbar';
-import ProfileDropdown from '../components/auth/ProfileDropdown';import { Bell } from 'lucide-react';
+import ProfileDropdown from '../components/auth/ProfileDropdown';
+import UploadBox from '../components/UploadBox';import { Bell } from 'lucide-react';
 
 type UploadState = 'idle' | 'processing' | 'review' | 'success';
 
 const Upload = () => {
   const [state, setState] = useState<UploadState>('idle');
-  const [dragOver, setDragOver] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const startProcessing = () => {
     setState('processing');
     setTimeout(() => setState('review'), 2500);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = () => setDragOver(false);
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    startProcessing();
+  const handleComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['passport'] });
   };
 
   return (
@@ -50,17 +43,7 @@ const Upload = () => {
 
         {/* State 1 — Upload Zone */}
         {state === 'idle' && (
-          <div
-            className={`card-upload text-center py-12 transition-opacity ${dragOver ? 'opacity-100 border-primary' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <UploadCloud className="w-12 h-12 text-primary mx-auto mb-4" />
-            <p className="font-semibold text-dark mb-1">Drop your prescription or report here</p>
-            <p className="text-xs text-muted-foreground mb-4">Supports JPG, PNG, PDF</p>
-            <button className="btn-primary" onClick={startProcessing}>Browse Files</button>
-          </div>
+          <UploadBox onFileSelect={() => startProcessing()} onComplete={handleComplete} />
         )}
 
         {/* State 2 — Processing */}
