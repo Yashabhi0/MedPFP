@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Sparkles, Send } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import ProfileDropdown from '../components/auth/ProfileDropdown';
 
 const patients = [
   { initials: 'RK', name: 'Ramesh Kumar', age: 58, condition: 'Type 2 Diabetes', time: '2 hours ago' },
@@ -24,7 +25,7 @@ const DoctorPatients = () => (
         { label: 'My Patients', to: '/doctor/patients' },
       ]}
       rightContent={
-        <div className="w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold">DR</div>
+        <ProfileDropdown initials="DR" color="#9FB4BB" />
       }
     />
 

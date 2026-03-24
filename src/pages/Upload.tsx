@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UploadCloud, Loader2, Sparkles, CheckCircle } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { Bell } from 'lucide-react';
+import ProfileDropdown from '../components/auth/ProfileDropdown';import { Bell } from 'lucide-react';
 
 type UploadState = 'idle' | 'processing' | 'review' | 'success';
 
@@ -40,7 +40,7 @@ const Upload = () => {
         rightContent={
           <div className="flex items-center gap-3">
             <button className="relative"><Bell className="w-5 h-5 text-muted-foreground" /></button>
-            <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">RS</div>
+            <ProfileDropdown initials="RS" />
           </div>
         }
       />
