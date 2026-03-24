@@ -32,6 +32,7 @@ const Upload = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar
+        initialFloating={true}
         links={[
           { label: 'My Passport', to: '/dashboard' },
           { label: 'Upload Documents', to: '/dashboard/upload' },

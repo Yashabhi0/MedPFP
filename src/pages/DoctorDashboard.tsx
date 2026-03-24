@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 const DoctorDashboard = () => (
   <div className="min-h-screen bg-background">
     <Navbar
+      initialFloating={true}
       links={[
         { label: 'Scan QR', to: '/doctor' },
         { label: 'My Patients', to: '/doctor/patients' },

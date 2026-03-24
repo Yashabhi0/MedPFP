@@ -11,8 +11,9 @@ const Landing = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ marginTop: 0 }}>
       <Navbar
+        transparent={true}
         rightContent={
           <>
             <button className="btn-ghost text-sm">Sign In</button>
