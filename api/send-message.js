@@ -1,12 +1,11 @@
-const twilio = require('twilio');
+import twilio from 'twilio';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
   const { phone, message } = req.body;
-  console.log('[send-message] Received:', { phone, message });
 
   if (!phone || !message) {
     return res.status(400).json({ success: false, error: 'phone and message are required' });
@@ -28,10 +27,9 @@ module.exports = async function handler(req, res) {
       to,
       body: message,
     });
-    console.log('[send-message] Sent SID:', result.sid);
     return res.status(200).json({ success: true, sid: result.sid });
   } catch (err) {
     console.error('[send-message] Twilio error:', err.message);
     return res.status(500).json({ success: false, error: err.message });
   }
-};
+}

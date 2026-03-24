@@ -8,7 +8,7 @@ const CONDITION_MAP = {
   'Arthritis':     'rheumatologist',
 };
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
@@ -20,7 +20,6 @@ module.exports = async function handler(req, res) {
   }
 
   const specialty = condition ? (CONDITION_MAP[condition] ?? 'doctor') : 'doctor';
-  console.log(`[nearby-doctors] lat=${lat} lng=${lng} condition=${condition} → ${specialty}`);
 
   const overpassQuery = `
 [out:json][timeout:25];
@@ -63,11 +62,9 @@ out center;
       })
       .filter(Boolean);
 
-    console.log(`[nearby-doctors] Found ${doctors.length} results`);
     return res.status(200).json({ success: true, specialty, doctors });
-
   } catch (err) {
     console.error('[nearby-doctors] Error:', err.message);
     return res.status(500).json({ success: false, error: err.message });
   }
-};
+}
