@@ -1,13 +1,21 @@
 import { useRef, useState } from 'react';
-import { UploadCloud } from 'lucide-react';
+import { UploadCloud, Loader2, Check } from 'lucide-react';
 import { useUser } from '@clerk/clerk-react';
 import { uploadReport } from '../lib/api/upload';
 import { createReport } from '../lib/api/reports';
-import { extractTextFromFile } from '../lib/parser';
-import { parseMedicalText } from '../lib/api/ai';
+import { parseMedicalFile, MedicalData } from '../lib/api/ai';
 import { updatePassportData } from '../lib/api/passport';
 
 const ACCEPTED_TYPES = ['application/pdf', 'image/png', 'image/jpeg'];
+const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+
+type Step = 'uploading' | 'parsing' | 'saving' | null;
+
+const STEPS: { key: Step; label: string }[] = [
+  { key: 'uploading', label: 'Uploading' },
+  { key: 'parsing',   label: 'Analyzing' },
+  { key: 'saving',    label: 'Saving'    },
+];
 
 interface UploadBoxProps {
   onFileSelect?: (file: File) => void;
@@ -18,18 +26,23 @@ const UploadBox = ({ onFileSelect, onComplete }: UploadBoxProps) => {
   const { user } = useUser();
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [extracting, setExtracting] = useState(false);
-  const [parsing, setParsing] = useState(false);
-  const [updating, setUpdating] = useState(false);
+  const [step, setStep] = useState<Step>(null);
+  const [completedSteps, setCompletedSteps] = useState<Step[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const isBusy = uploading || saving || extracting || parsing || updating;
+  const isBusy = step !== null;
+
+  const complete = (done: Step) =>
+    setCompletedSteps(prev => (done ? [...prev, done] : prev));
 
   const handleFile = (incoming: File) => {
     if (!ACCEPTED_TYPES.includes(incoming.type)) {
       setError('Invalid file type. Please upload a PDF, PNG, or JPG.');
+      setFile(null);
+      return;
+    }
+    if (incoming.size > MAX_SIZE_BYTES) {
+      setError('File is too large. Maximum size is 5MB.');
       setFile(null);
       return;
     }
@@ -43,86 +56,64 @@ const UploadBox = ({ onFileSelect, onComplete }: UploadBoxProps) => {
     if (selected) handleFile(selected);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const dropped = e.dataTransfer.files?.[0];
-    if (dropped) handleFile(dropped);
-  };
-
   const handleUpload = async () => {
     if (!file || !user) return;
+    setError(null);
+    setCompletedSteps([]);
 
-    // Step 1: Upload file
-    let fileUrl: string;
     try {
-      setUploading(true);
-      fileUrl = await uploadReport(file);
-    } catch (err) {
-      console.error('Upload failed:', err);
-      setUploading(false);
-      return;
-    } finally {
-      setUploading(false);
-    }
+      // Step 1: Upload to storage
+      setStep('uploading');
+      console.log('[upload] STEP 1: Uploading file...');
+      let fileUrl: string;
+      try {
+        fileUrl = await uploadReport(file);
+        console.log('[upload] STEP 1: Upload done →', fileUrl);
+      } catch (err) {
+        console.error('[upload] STEP 1 failed:', err);
+        setError('Upload failed. Please try again.');
+        return;
+      }
+      complete('uploading');
 
-    // Step 2: Save report record
-    try {
-      setSaving(true);
-      await createReport(user.id, fileUrl);
-    } catch (err) {
-      console.error('Save failed:', err);
-    } finally {
-      setSaving(false);
-    }
+      // Step 2: Gemini parses the file directly
+      setStep('parsing');
+      console.log('[upload] STEP 2: Analyzing document with Gemini...');
+      let medicalData: MedicalData;
+      try {
+        medicalData = await parseMedicalFile(fileUrl);
+        console.log('[upload] STEP 2: Parsing done →', medicalData);
+      } catch (err) {
+        console.error('[upload] STEP 2 failed:', err);
+        setError('Could not process document. Try another file.');
+        return;
+      }
+      complete('parsing');
 
-    // Step 3: Extract text
-    let text: string;
-    try {
-      setExtracting(true);
-      text = await extractTextFromFile(fileUrl);
-    } catch (err) {
-      console.error('Extraction failed:', err);
-      setExtracting(false);
-      return;
+      // Step 3: Save to DB
+      setStep('saving');
+      console.log('[upload] STEP 3: Saving to DB...');
+      try {
+        await createReport(user.id, fileUrl, medicalData);
+        await updatePassportData(user.id, medicalData);
+        console.log('[upload] STEP 3: Save done');
+        setCompletedSteps(['uploading', 'parsing', 'saving']);
+        onComplete?.();
+      } catch (err) {
+        console.error('[upload] STEP 3 failed:', err);
+        setError('Failed to save. Please try again.');
+      }
     } finally {
-      setExtracting(false);
-    }
-
-    // Step 4: Parse with AI
-    let medicalData;
-    try {
-      setParsing(true);
-      medicalData = await parseMedicalText(text);
-    } catch (err) {
-      console.error('Parsing failed:', err);
-      setParsing(false);
-      return;
-    } finally {
-      setParsing(false);
-    }
-
-    // Step 5: Update passport in DB
-    try {
-      setUpdating(true);
-      await updatePassportData(user.id, medicalData);
-      onComplete?.();
-    } catch (err) {
-      console.error('DB update failed:', err);
-    } finally {
-      setUpdating(false);
+      setStep(null);
     }
   };
 
-  const buttonLabel = uploading
+  const stepLabel = step === 'uploading'
     ? 'Uploading...'
-    : saving
-    ? 'Saving...'
-    : extracting
-    ? 'Extracting...'
-    : parsing
-    ? 'Parsing...'
-    : updating
-    ? 'Updating...'
+    : step === 'parsing'
+    ? 'Analyzing document...'
+    : step === 'saving'
+    ? 'Saving data...'
     : 'Upload Report';
 
   return (
@@ -130,9 +121,15 @@ const UploadBox = ({ onFileSelect, onComplete }: UploadBoxProps) => {
       {/* Drop zone */}
       <div
         className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center py-12 sm:py-10 px-4 text-center cursor-pointer hover:border-primary/60 transition-colors"
-        onClick={() => inputRef.current?.click()}
+        onClick={() => !isBusy && inputRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
-        onDrop={handleDrop}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (!isBusy) {
+            const f = e.dataTransfer.files?.[0];
+            if (f) handleFile(f);
+          }
+        }}
       >
         <UploadCloud className="w-10 h-10 text-primary mb-3" />
         {file ? (
@@ -142,7 +139,7 @@ const UploadBox = ({ onFileSelect, onComplete }: UploadBoxProps) => {
             <p className="text-sm font-semibold text-foreground mb-1">
               Drop your file here or click to browse
             </p>
-            <p className="text-xs text-muted-foreground">Supports PDF, PNG, JPG</p>
+            <p className="text-xs text-muted-foreground">Supports PDF, PNG, JPG · Max 5MB</p>
           </>
         )}
         <input
@@ -154,6 +151,33 @@ const UploadBox = ({ onFileSelect, onComplete }: UploadBoxProps) => {
         />
       </div>
 
+      {/* Step progress — only shown while busy */}
+      {isBusy && (
+        <div className="flex items-center justify-between px-1">
+          {STEPS.map(({ key, label }, i) => {
+            const done = completedSteps.includes(key);
+            const active = step === key;
+            return (
+              <div key={key} className="flex items-center gap-1.5">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
+                  done   ? 'bg-primary text-white' :
+                  active ? 'bg-primary/20 text-primary border border-primary' :
+                           'bg-border text-muted-foreground'
+                }`}>
+                  {done ? <Check className="w-3 h-3" /> : active ? <Loader2 className="w-3 h-3 animate-spin" /> : i + 1}
+                </div>
+                <span className={`text-xs hidden sm:inline ${active ? 'text-foreground font-medium' : done ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {label}
+                </span>
+                {i < STEPS.length - 1 && (
+                  <div className={`w-4 sm:w-8 h-px mx-1 ${done ? 'bg-primary' : 'bg-border'}`} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Error */}
       {error && <p className="text-xs text-destructive">{error}</p>}
 
@@ -163,7 +187,7 @@ const UploadBox = ({ onFileSelect, onComplete }: UploadBoxProps) => {
         disabled={!file || isBusy}
         onClick={handleUpload}
       >
-        {buttonLabel}
+        {stepLabel}
       </button>
     </div>
   );
