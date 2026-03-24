@@ -17,9 +17,16 @@ const Skeleton = ({ className }: { className?: string }) => (
 
 const Dashboard = () => {
   const { user: clerkUser } = useClerkUser();
-  const clerkId = clerkUser?.id;
 
-  const { data: profile, isLoading: profileLoading, isError: profileError } = useUser(clerkId);
+  const clerkId    = clerkUser?.id;
+  const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress;
+  const clerkName  = clerkUser?.fullName ?? clerkUser?.firstName ?? '';
+
+  const { data: profile, isLoading: profileLoading, isError: profileError } = useUser(
+    clerkId,
+    clerkName,
+    clerkEmail
+  );
 
   // Dependent query — only fires once profile has resolved
   const { data: passport, isLoading: passportLoading, isError: passportError } = usePassport(
@@ -27,7 +34,7 @@ const Dashboard = () => {
   );
 
   const isLoading = profileLoading || (!!profile?.id && passportLoading);
-  const isError = profileError || passportError;
+  const isError   = profileError || passportError;
 
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()

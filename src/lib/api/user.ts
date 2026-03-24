@@ -1,18 +1,46 @@
 import { supabase } from '@/lib/supabase';
 import { UserProfile, UserRole } from '@/types';
 
-export async function createUserProfile(
+/**
+ * Fetches an existing profile or creates one on first login.
+ * Safe to call on every mount — idempotent.
+ */
+export async function getOrCreateUserProfile(
   clerkUserId: string,
   fullName: string,
-  role: UserRole
+  email: string
 ): Promise<UserProfile> {
-  const { data, error } = await supabase
+  // 1. Try to fetch existing profile
+  const { data: existing, error: fetchError } = await supabase
     .from('user_profiles')
-    .insert({ clerk_user_id: clerkUserId, full_name: fullName, role })
+    .select('*')
+    .eq('clerk_user_id', clerkUserId)
+    .single();
+
+  if (fetchError && fetchError.code !== 'PGRST116') {
+    console.error('[getOrCreateUserProfile] fetch error:', fetchError);
+    throw fetchError;
+  }
+
+  if (existing) return existing;
+
+  // 2. No row found — insert a new profile
+  const { data: created, error: insertError } = await supabase
+    .from('user_profiles')
+    .insert({
+      clerk_user_id: clerkUserId,
+      full_name: fullName || email, // fallback if name not set yet
+      role: 'patient' as UserRole,  // default role; user can change later
+    })
     .select()
     .single();
-  if (error) throw error;
-  return data;
+
+  if (insertError) {
+    console.error('[getOrCreateUserProfile] insert error:', insertError);
+    throw insertError;
+  }
+
+  return created;
 }
 
 export async function getUserProfile(clerkUserId: string): Promise<UserProfile | null> {

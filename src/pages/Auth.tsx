@@ -35,8 +35,13 @@ const Auth = () => {
       localStorage.setItem('selectedRole', role);
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
+        // redirectUrl      → where Clerk sends the browser after Google returns
+        //                    must match an Allowed Redirect URL in Clerk Dashboard
         redirectUrl: '/sso-callback',
-        redirectUrlComplete: '/sso-callback',
+        // redirectUrlComplete → where to go after the Clerk session is established
+        //                       ?ready=1 tells SSOCallback to skip the handshake
+        //                       and go straight to role-based routing
+        redirectUrlComplete: '/sso-callback?ready=1',
       });
     } catch (err) {
       console.error('Google OAuth error:', err);
