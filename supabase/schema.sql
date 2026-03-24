@@ -45,6 +45,18 @@ create table public.uploaded_reports (
   uploaded_at  timestamptz default now()
 );
 
+-- ── Doctor → Patient relationships ───────────────────────────────────────
+-- Stores which passport codes a doctor has scanned/added
+drop table if exists public.doctor_patients cascade;
+
+create table public.doctor_patients (
+  id            uuid primary key default uuid_generate_v4(),
+  doctor_id     text not null,          -- clerk_user_id of the doctor
+  passport_code text not null,
+  added_at      timestamptz default now(),
+  unique (doctor_id, passport_code)     -- no duplicates
+);
+
 -- ── Auto-generate passport_code on insert ────────────────────────────────
 
 create or replace function generate_passport_code()
@@ -68,9 +80,11 @@ create trigger set_passport_code
 alter table public.user_profiles    disable row level security;
 alter table public.passports        disable row level security;
 alter table public.uploaded_reports disable row level security;
+alter table public.doctor_patients  disable row level security;
 
 -- ── Grant anon key full access (needed when RLS is off) ──────────────────
 grant all on public.user_profiles    to anon, authenticated;
 grant all on public.passports        to anon, authenticated;
 grant all on public.uploaded_reports to anon, authenticated;
+grant all on public.doctor_patients  to anon, authenticated;
 
