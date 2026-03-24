@@ -100,17 +100,20 @@ const Navbar = ({ links = [], rightContent, transparent = false, initialFloating
             </div>
           )}
 
-          {/* Right content */}
-          <div className="ml-auto flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-3">{rightContent}</div>
-            <button
-              className={`md:hidden transition-colors ${
-                isTransparent ? 'text-white' : 'text-foreground'
-              }`}
-              onClick={() => setMobileOpen(!mobileOpen)}
-            >
-              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+          {/* Right content — always visible; hamburger only shown when there are links */}
+          <div className="ml-auto flex items-center gap-2">
+            <div className="flex items-center gap-3">{rightContent}</div>
+            {links.length > 0 && (
+              <button
+                className={`md:hidden p-1 transition-colors ${
+                  isTransparent ? 'text-white' : 'text-foreground'
+                }`}
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label="Toggle menu"
+              >
+                {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            )}
           </div>
         </div>
 

@@ -44,8 +44,8 @@ const Upload = () => {
         }
       />
 
-      <div className="max-w-[680px] mx-auto px-4 py-8 space-y-8">
-        <h1>Upload Documents</h1>
+      <div className="max-w-[680px] mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <h1 className="text-2xl sm:text-3xl font-bold">Upload Documents</h1>
 
         {/* State 1 — Upload Zone */}
         {state === 'idle' && (
@@ -88,9 +88,9 @@ const Upload = () => {
             </div>
 
             <div className="flex flex-wrap gap-3 mt-6">
-              <button className="btn-primary" onClick={() => setState('success')}>Confirm & Save</button>
-              <button className="btn-secondary">Edit</button>
-              <button className="btn-ghost" onClick={() => setState('idle')}>Discard</button>
+              <button className="btn-primary w-full sm:w-auto" onClick={() => setState('success')}>Confirm & Save</button>
+              <button className="btn-secondary w-full sm:w-auto">Edit</button>
+              <button className="btn-ghost w-full sm:w-auto" onClick={() => setState('idle')}>Discard</button>
             </div>
           </div>
         )}

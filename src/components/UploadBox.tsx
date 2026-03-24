@@ -129,7 +129,7 @@ const UploadBox = ({ onFileSelect, onComplete }: UploadBoxProps) => {
     <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
       {/* Drop zone */}
       <div
-        className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center py-10 px-4 text-center cursor-pointer hover:border-primary/60 transition-colors"
+        className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center py-12 sm:py-10 px-4 text-center cursor-pointer hover:border-primary/60 transition-colors"
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}

@@ -198,7 +198,7 @@ const Dashboard = () => {
         }
       />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isError && (
           <div className="card-alert mb-6">
             <p className="text-destructive text-sm">Failed to load your data. Please refresh.</p>
@@ -209,28 +209,28 @@ const Dashboard = () => {
         <div className="mb-8">
           {isLoading
             ? <Skeleton className="h-9 w-64 mb-2" />
-            : <h1 className="text-[32px] font-bold text-dark mb-2">Good morning, {firstName}!</h1>
+            : <h1 className="text-2xl sm:text-3xl md:text-[32px] font-bold text-dark mb-2">Good morning, {firstName}!</h1>
           }
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex flex-wrap items-center gap-3 mb-4">
             {isLoading ? <Skeleton className="h-4 w-48" /> : (
               <>
                 <span className="text-sm text-muted-foreground">
                   Your passport is {passport?.completion_percent ?? 0}% complete
                 </span>
-                <div className="flex-1 max-w-xs h-2 bg-border rounded-full overflow-hidden">
+                <div className="flex-1 min-w-[80px] max-w-xs h-2 bg-border rounded-full overflow-hidden">
                   <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${passport?.completion_percent ?? 0}%` }} />
                 </div>
               </>
             )}
           </div>
           <div className="flex flex-wrap gap-3">
-            <button className="btn-secondary text-sm" onClick={() => setAddingMedicine(true)}>+ Add Medicine</button>
-            <Link to="/dashboard/upload" className="btn-secondary text-sm">+ Upload Report</Link>
-            <button className="btn-secondary text-sm" onClick={() => document.getElementById('qr-card')?.scrollIntoView({ behavior: 'smooth' })}>View QR</button>
+            <button className="btn-secondary text-sm w-full sm:w-auto" onClick={() => setAddingMedicine(true)}>+ Add Medicine</button>
+            <Link to="/dashboard/upload" className="btn-secondary text-sm w-full sm:w-auto text-center">+ Upload Report</Link>
+            <button className="btn-secondary text-sm w-full sm:w-auto" onClick={() => document.getElementById('qr-card')?.scrollIntoView({ behavior: 'smooth' })}>View QR</button>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-12 gap-8">
+        <div className="grid lg:grid-cols-12 gap-6 lg:gap-8">
           <div className="lg:col-span-8 space-y-6">
 
             {/* ── Personal Information ── */}
@@ -252,7 +252,7 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground">No profile found.</p>
               ) : editingInfo ? (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">Full Name</label>
                       <input value={infoForm.full_name} onChange={e => setInfoForm(f => ({ ...f, full_name: e.target.value }))} className={inputCls} />
@@ -357,13 +357,13 @@ const Dashboard = () => {
               </div>
 
               {isLoading ? (
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
                 </div>
               ) : !passport?.medicines?.length && !addingMedicine ? (
                 <p className="text-sm text-muted-foreground">No medicines recorded.</p>
               ) : (
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {(passport?.medicines ?? []).map((m: Medicine) => (
                     <div key={m.id} className="card-base card-hover relative">
                       <button
@@ -396,8 +396,8 @@ const Dashboard = () => {
           </div>
 
           {/* ── Sidebar QR ── */}
-          <div className="lg:col-span-4">
-            <div id="qr-card" className="card-base text-center sticky top-24">
+          <div className="lg:col-span-4 order-first lg:order-none">
+            <div id="qr-card" className="card-base text-center lg:sticky lg:top-24">
               <h3 className="mb-4">Your Health Passport QR</h3>
               {!clerkId ? (
                 <Skeleton className="w-48 h-48 mx-auto mb-4" />
