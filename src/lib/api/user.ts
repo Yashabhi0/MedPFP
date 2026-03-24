@@ -1,23 +1,22 @@
 import { supabase } from '@/lib/supabase';
 import { UserProfile, UserRole } from '@/types';
 
-/**
- * Fetches an existing profile or creates one on first login.
- * Safe to call on every mount — idempotent.
- */
+type GetToken = (options?: { template?: string }) => Promise<string | null>;
+
 export async function getOrCreateUserProfile(
   clerkUserId: string,
   fullName: string,
-  email: string
+  email: string,
+  _getToken?: GetToken
 ): Promise<UserProfile> {
   // 1. Try to fetch existing profile
   const { data: existing, error: fetchError } = await supabase
     .from('user_profiles')
     .select('*')
     .eq('clerk_user_id', clerkUserId)
-    .single();
+    .maybeSingle();
 
-  if (fetchError && fetchError.code !== 'PGRST116') {
+  if (fetchError) {
     console.error('[getOrCreateUserProfile] fetch error:', fetchError);
     throw fetchError;
   }
@@ -29,8 +28,8 @@ export async function getOrCreateUserProfile(
     .from('user_profiles')
     .insert({
       clerk_user_id: clerkUserId,
-      full_name: fullName || email, // fallback if name not set yet
-      role: 'patient' as UserRole,  // default role; user can change later
+      full_name: fullName || email,
+      role: 'patient' as UserRole,
     })
     .select()
     .single();
@@ -43,20 +42,10 @@ export async function getOrCreateUserProfile(
   return created;
 }
 
-export async function getUserProfile(clerkUserId: string): Promise<UserProfile | null> {
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('clerk_user_id', clerkUserId)
-    .single();
-  if (error?.code === 'PGRST116') return null;
-  if (error) throw error;
-  return data;
-}
-
 export async function updateUserProfile(
   clerkUserId: string,
-  updates: Partial<Omit<UserProfile, 'id' | 'clerk_user_id' | 'created_at'>>
+  updates: Partial<Omit<UserProfile, 'id' | 'clerk_user_id' | 'created_at'>>,
+  _getToken?: GetToken
 ): Promise<UserProfile> {
   const { data, error } = await supabase
     .from('user_profiles')
