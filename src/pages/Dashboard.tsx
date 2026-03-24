@@ -189,6 +189,7 @@ const Dashboard = () => {
         links={[
           { label: 'My Passport', to: '/dashboard' },
           { label: 'Upload Documents', to: '/dashboard/upload' },
+          { label: 'Nearby Doctors', to: '/doctors' },
         ]}
         rightContent={
           <div className="flex items-center gap-3">

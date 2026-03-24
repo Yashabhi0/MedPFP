@@ -15,6 +15,8 @@ import NotFound from "./pages/NotFound";
 
 import MsgPage from "./pages/MsgPage";
 
+import Doctors from "./pages/Doctors";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -33,6 +35,7 @@ const App = () => (
           <Route path="/passport/demo" element={<Passport />} />
           <Route path="/passport/:passportCode" element={<Passport />} />
           <Route path="/msg" element={<MsgPage />} />
+          <Route path="/doctors" element={<Doctors />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
