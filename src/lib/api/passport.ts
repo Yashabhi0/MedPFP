@@ -2,7 +2,39 @@ import { supabase } from '@/lib/supabase';
 import { Passport } from '@/types';
 import { MedicalData } from '@/lib/api/ai';
 
-export async function createPassport(userId: string): Promise<Passport> {
+type GetToken = (options?: { template?: string }) => Promise<string | null>;
+
+// ── Reads ─────────────────────────────────────────────────────────────────
+
+export async function getPassportByCode(passportCode: string): Promise<Passport | null> {
+  const { data, error } = await supabase
+    .from('passports')
+    .select('*')
+    .eq('passport_code', passportCode)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function getPassportByUserId(
+  userId: string,
+  _getToken?: GetToken
+): Promise<Passport | null> {
+  const { data, error } = await supabase
+    .from('passports')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+// ── Writes ────────────────────────────────────────────────────────────────
+
+export async function createPassport(
+  userId: string,
+  _getToken?: GetToken
+): Promise<Passport> {
   const { data, error } = await supabase
     .from('passports')
     .insert({ user_id: userId })
@@ -12,31 +44,19 @@ export async function createPassport(userId: string): Promise<Passport> {
   return data;
 }
 
-export async function getPassportByUserId(userId: string): Promise<Passport | null> {
-  const { data, error } = await supabase
-    .from('passports')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-  if (error?.code === 'PGRST116') return null;
-  if (error) throw error;
-  return data;
-}
-
-export async function getPassportByCode(passportCode: string): Promise<Passport | null> {
-  const { data, error } = await supabase
-    .from('passports')
-    .select('*')
-    .eq('passport_code', passportCode)
-    .single();
-  if (error?.code === 'PGRST116') return null;
-  if (error) throw error;
-  return data;
+export async function getOrCreatePassport(
+  userId: string,
+  getToken?: GetToken
+): Promise<Passport> {
+  const existing = await getPassportByUserId(userId, getToken);
+  if (existing) return existing;
+  return createPassport(userId, getToken);
 }
 
 export async function updatePassport(
   passportId: string,
-  updates: Partial<Omit<Passport, 'id' | 'user_id' | 'passport_code'>>
+  updates: Partial<Omit<Passport, 'id' | 'user_id' | 'passport_code'>>,
+  _getToken?: GetToken
 ): Promise<Passport> {
   const completionPercent = calculateCompletion(updates as Passport);
   const { data, error } = await supabase
@@ -63,55 +83,33 @@ function calculateCompletion(passport: Partial<Passport>): number {
   return Math.round((filled / fields.length) * 100);
 }
 
-export async function updatePassportData(userId: string, data: MedicalData): Promise<void> {
+export async function updatePassportData(
+  userId: string,
+  data: MedicalData,
+  getToken?: GetToken
+): Promise<void> {
   try {
-    // Step 1: get or create passport
-    let passport = await getPassportByUserId(userId);
-    if (!passport) {
-      passport = await createPassport(userId);
-    }
+    const passport = await getOrCreatePassport(userId, getToken);
 
-    // Step 2: update conditions + allergies
-    const { error: updateError } = await supabase
+    const medicines = data.medicines.map((m) => ({
+      id: crypto.randomUUID(),
+      name: m.name,
+      dosage: m.dosage,
+      frequency: m.frequency,
+    }));
+
+    const { error } = await supabase
       .from('passports')
       .update({
         conditions: data.conditions,
         allergies: data.allergies,
+        medicines,
         updated_at: new Date().toISOString(),
       })
       .eq('id', passport.id);
 
-    if (updateError) {
-      console.error('Failed to update passport:', updateError);
-      throw updateError;
-    }
-
-    // Step 3: replace medicines
-    const { error: deleteError } = await supabase
-      .from('medicines')
-      .delete()
-      .eq('passport_id', passport.id);
-
-    if (deleteError) {
-      console.error('Failed to delete old medicines:', deleteError);
-      throw deleteError;
-    }
-
-    if (data.medicines.length > 0) {
-      const rows = data.medicines.map((m) => ({
-        passport_id: passport!.id,
-        name: m.name,
-        dosage: m.dosage,
-        frequency: m.frequency,
-      }));
-
-      const { error: insertError } = await supabase.from('medicines').insert(rows);
-      if (insertError) {
-        console.error('Failed to insert medicines:', insertError);
-        throw insertError;
-      }
-    }
-  } catch (error) {
-    console.error('updatePassportData failed:', error);
+    if (error) throw error;
+  } catch (err) {
+    console.error('updatePassportData failed:', err);
   }
 }
