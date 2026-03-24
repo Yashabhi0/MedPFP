@@ -15,10 +15,7 @@ const Landing = () => {
       <Navbar
         transparent={true}
         rightContent={
-          <>
-            <button className="btn-ghost text-sm">Sign In</button>
-            <button className="btn-primary text-sm" onClick={() => setModalOpen(true)}>Get Started</button>
-          </>
+          <button className="btn-primary text-sm" onClick={() => setModalOpen(true)}>Get Started</button>
         }
       />
 
