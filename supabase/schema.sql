@@ -73,3 +73,4 @@ alter table public.uploaded_reports disable row level security;
 grant all on public.user_profiles    to anon, authenticated;
 grant all on public.passports        to anon, authenticated;
 grant all on public.uploaded_reports to anon, authenticated;
+

@@ -22,12 +22,18 @@ const DoctorDashboard = () => {
   const handlePatientAccess = (raw: string) => {
     if (navigatedRef.current) return;
     navigatedRef.current = true;
-    // QR encodes full URL → extract last path segment; plain IDs pass through
     let code = raw.trim();
     try {
       const url = new URL(raw);
       code = url.pathname.split('/').filter(Boolean).pop() ?? raw;
     } catch { /* plain ID, use as-is */ }
+
+    // Persist to doctor's patient list in localStorage
+    const existing: string[] = JSON.parse(localStorage.getItem('doctor_patients') ?? '[]');
+    if (!existing.includes(code)) {
+      localStorage.setItem('doctor_patients', JSON.stringify([code, ...existing]));
+    }
+
     navigate(`/passport/${code}`);
   };
 

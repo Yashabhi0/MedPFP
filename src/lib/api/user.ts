@@ -1,6 +1,16 @@
 import { supabase } from '@/lib/supabase';
 import { UserProfile, UserRole } from '@/types';
 
+export async function getUserProfileByInternalId(id: string): Promise<UserProfile | null> {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 type GetToken = (options?: { template?: string }) => Promise<string | null>;
 
 export async function getOrCreateUserProfile(
