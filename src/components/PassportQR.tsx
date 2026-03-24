@@ -1,4 +1,4 @@
-import QRCode from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface PassportQRProps {
   passportCode: string;
@@ -19,13 +19,12 @@ const PassportQR = ({ passportCode, size = 192 }: PassportQRProps) => {
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <QRCode
+      <QRCodeCanvas
         id="passport-qr"
         value={url}
         size={size}
         level="H"
         includeMargin
-        renderAs="canvas"
       />
       <p className="font-mono text-lg font-bold">{passportCode}</p>
       <button
