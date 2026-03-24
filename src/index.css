@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 200 16% 63%;          /* #8FA7B0 */
+    --background: 33 33% 97%;           /* #F7F4F0 — warm off-white, easier on eyes for dashboards */
     --foreground: 0 0% 18%;             /* #2E2E2E */
     --card: 33 33% 94%;                 /* #F2EDE6 */
     --card-foreground: 0 0% 18%;        /* #2E2E2E */

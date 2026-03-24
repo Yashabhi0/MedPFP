@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useUser, useSignIn } from '@clerk/clerk-react';
-import { Mail, Lock, Eye, EyeOff, Stethoscope, User } from 'lucide-react';
+import { Stethoscope, User } from 'lucide-react';
 import { UserRole } from '@/types';
 
 const Auth = () => {
   const [role, setRole] = useState<UserRole>('patient');
-  const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const { isLoaded: authLoaded, isSignedIn } = useAuth();
@@ -193,126 +192,6 @@ const Auth = () => {
                 {r.charAt(0).toUpperCase() + r.slice(1)}
               </button>
             ))}
-          </div>
-
-          {/* Form */}
-          <form onSubmit={e => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-
-            {/* Email */}
-            <div style={{ position: 'relative' }}>
-              <Mail style={{
-                position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)',
-                width: '15px', height: '15px', color: '#94A3B8', pointerEvents: 'none',
-              }} />
-              <input
-                type="email"
-                placeholder="Email address"
-                style={{
-                  width: '100%',
-                  padding: '11px 14px 11px 38px',
-                  fontSize: '13.5px',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '9px',
-                  background: '#FFFFFF',
-                  color: '#0F172A',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.15s, box-shadow 0.15s',
-                }}
-                onFocus={e => {
-                  e.currentTarget.style.borderColor = '#0D9488';
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13,148,136,0.12)';
-                }}
-                onBlur={e => {
-                  e.currentTarget.style.borderColor = '#E2E8F0';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '500', color: '#475569' }}>Password</label>
-                <a href="#" style={{ fontSize: '12px', color: '#0D9488', textDecoration: 'none', fontWeight: '500' }}>
-                  Forgot password?
-                </a>
-              </div>
-              <div style={{ position: 'relative' }}>
-                <Lock style={{
-                  position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)',
-                  width: '15px', height: '15px', color: '#94A3B8', pointerEvents: 'none',
-                }} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  style={{
-                    width: '100%',
-                    padding: '11px 40px 11px 38px',
-                    fontSize: '13.5px',
-                    border: '1px solid #E2E8F0',
-                    borderRadius: '9px',
-                    background: '#FFFFFF',
-                    color: '#0F172A',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.15s, box-shadow 0.15s',
-                  }}
-                  onFocus={e => {
-                    e.currentTarget.style.borderColor = '#0D9488';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13,148,136,0.12)';
-                  }}
-                  onBlur={e => {
-                    e.currentTarget.style.borderColor = '#E2E8F0';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(v => !v)}
-                  style={{
-                    position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer', padding: '2px',
-                    color: '#94A3B8', display: 'flex', alignItems: 'center',
-                  }}
-                >
-                  {showPassword
-                    ? <EyeOff style={{ width: '15px', height: '15px' }} />
-                    : <Eye style={{ width: '15px', height: '15px' }} />
-                  }
-                </button>
-              </div>
-            </div>
-
-            {/* Sign in button */}
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '9px',
-                border: 'none',
-                background: 'linear-gradient(135deg, #0D9488 0%, #0F766E 100%)',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                marginTop: '2px',
-                transition: 'opacity 0.15s, transform 0.15s',
-                letterSpacing: '0.01em',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.92'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
-            >
-              Sign in →
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
-            <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
-            <span style={{ fontSize: '12px', color: '#94A3B8', whiteSpace: 'nowrap' }}>or continue with</span>
-            <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
           </div>
 
           {/* Google button */}

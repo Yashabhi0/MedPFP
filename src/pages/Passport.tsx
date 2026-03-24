@@ -75,7 +75,7 @@ const Passport = () => (
           ].map((d) => (
             <div key={d.label} className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{d.label}</span>
-              <span className="font-semibold text-primary">{d.value}</span>
+              <span className="font-semibold" style={{ color: '#A8643E' }}>{d.value}</span>
               <span className="text-xs text-muted-foreground">{d.date}</span>
             </div>
           ))}

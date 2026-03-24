@@ -14,7 +14,7 @@ const RoleGuard = ({ children, requiredRole }: RoleGuardProps) => {
     return null;
   }
 
-  const role = user?.publicMetadata?.role as UserRole | undefined;
+  const role = user?.unsafeMetadata?.role as UserRole | undefined;
 
   if (role && role !== requiredRole) {
     return <Navigate to="/" />;

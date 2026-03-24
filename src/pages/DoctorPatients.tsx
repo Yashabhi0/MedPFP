@@ -53,7 +53,7 @@ const DoctorPatients = () => (
         {/* AI Chat */}
         <div className="lg:col-span-5">
           <div className="card-info overflow-hidden p-0">
-            <div className="bg-gradient-to-r from-primary to-secondary p-4 flex items-center gap-2">
+            <div className="p-4 flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #8FA7B0 0%, #9FB4BB 100%)' }}>
               <Sparkles className="w-5 h-5 text-white" />
               <h3 className="text-white font-semibold text-sm">Health Passport AI</h3>
               <span className="bg-white/20 text-white text-[10px] font-bold rounded-full px-2 py-0.5 ml-auto">Beta</span>
@@ -66,8 +66,9 @@ const DoctorPatients = () => (
                     className={`rounded-2xl px-4 py-2.5 text-sm max-w-[85%] ${
                       msg.role === 'user'
                         ? 'bg-card border border-primary/30 text-foreground'
-                        : 'bg-primary text-white'
+                        : 'text-white'
                     }`}
+                    style={msg.role === 'assistant' ? { backgroundColor: '#8FA7B0' } : undefined}
                   >
                     {msg.text}
                   </div>
@@ -80,6 +81,7 @@ const DoctorPatients = () => (
                 type="text"
                 placeholder="Ask about a patient..."
                 className="flex-1 px-3 py-2 text-sm border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
+                onChange={() => {}}
               />
               <button className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center shrink-0">
                 <Send className="w-4 h-4" />

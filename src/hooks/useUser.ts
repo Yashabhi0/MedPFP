@@ -31,14 +31,4 @@ export function useUpdateUser(clerkUserId: string) {
   });
 }
 
-/** @deprecated — use useUser which now handles creation automatically */
-export function useCreateUser() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ clerkUserId, fullName, role }: { clerkUserId: string; fullName: string; role: UserRole }) =>
-      getOrCreateUserProfile(clerkUserId, fullName, ''),
-    onSuccess: (data) => {
-      queryClient.setQueryData(['user', data.clerk_user_id], data);
-    },
-  });
-}
+

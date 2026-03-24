@@ -2,13 +2,19 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Sparkles, CheckCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useUser as useClerkUser } from '@clerk/clerk-react';
 import Navbar from '../components/Navbar';
 import ProfileDropdown from '../components/auth/ProfileDropdown';
-import UploadBox from '../components/UploadBox';import { Bell } from 'lucide-react';
+import UploadBox from '../components/UploadBox';
+import { Bell } from 'lucide-react';
 
 type UploadState = 'idle' | 'processing' | 'review' | 'success';
 
 const Upload = () => {
+  const { user: clerkUser } = useClerkUser();
+  const initials = clerkUser?.fullName
+    ? clerkUser.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+    : '??';
   const [state, setState] = useState<UploadState>('idle');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -33,7 +39,7 @@ const Upload = () => {
         rightContent={
           <div className="flex items-center gap-3">
             <button className="relative"><Bell className="w-5 h-5 text-muted-foreground" /></button>
-            <ProfileDropdown initials="RS" />
+            <ProfileDropdown initials={initials} />
           </div>
         }
       />
