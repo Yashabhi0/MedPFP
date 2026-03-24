@@ -69,7 +69,7 @@ const Navbar = ({ links = [], rightContent, transparent = false, initialFloating
             }`}
           >
             <HeartPulse className="w-5 h-5" style={{ color: isTransparent ? 'white' : '#A8643E' }} />
-            <span>Health Passport</span>
+            <span>MedPFP</span>
           </Link>
 
           {/* Center links */}
