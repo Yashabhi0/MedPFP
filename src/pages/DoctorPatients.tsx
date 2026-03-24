@@ -1,111 +1,244 @@
 import { useRef, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Sparkles, Send, Loader2 } from 'lucide-react';
+import { Sparkles, Send, Loader2, X, User } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import Navbar from '../components/Navbar';
 import ProfileDropdown from '../components/auth/ProfileDropdown';
+import { getPassportByCode } from '../lib/api/passport';
+import { getUserProfileByInternalId } from '../lib/api/user';
+import { getReports } from '../lib/api/reports';
+import type { Passport, UserProfile, UploadedReport } from '../types';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY as string;
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-const patients = [
-  { initials: 'RK', name: 'Ramesh Kumar',  age: 58, condition: 'Type 2 Diabetes',  time: '2 hours ago' },
-  { initials: 'PM', name: 'Priya Menon',   age: 45, condition: 'Hypertension',      time: 'Yesterday'   },
-  { initials: 'AS', name: 'Arjun Shah',    age: 67, condition: 'Asthma',            time: '2 days ago'  },
-  { initials: 'SR', name: 'Sunita Rao',    age: 52, condition: 'Hypothyroidism',    time: '3 days ago'  },
-];
-
-const SYSTEM_PROMPT = `You are Health Passport AI, a medical assistant for doctors.
-You have access to the following recently accessed patients:
-${patients.map(p => `- ${p.name}, age ${p.age}, condition: ${p.condition}, last accessed: ${p.time}`).join('\n')}
-
-Answer the doctor's questions about these patients helpfully and concisely.
-If asked about something outside your knowledge, say so clearly.
-Keep responses short and clinical. Do not make up specific medication details unless asked to suggest.`;
+// ── Types ─────────────────────────────────────────────────────────────────
+type PatientData = {
+  code: string;
+  passport: Passport;
+  profile: UserProfile | null;
+  reports: UploadedReport[];
+};
 
 type Message = { role: 'user' | 'assistant'; text: string };
 
-const INITIAL_MESSAGE: Message = {
-  role: 'assistant',
-  text: "Hello Doctor! I can help you understand your patients' medical history. Ask me anything about a patient's passport.",
+// ── Groq helpers ──────────────────────────────────────────────────────────
+async function fetchStructuredSummary(p: PatientData): Promise<string> {
+  const age = p.profile?.date_of_birth
+    ? Math.floor((Date.now() - new Date(p.profile.date_of_birth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+    : null;
+
+  const prompt = `You are a clinical assistant. Produce a structured medical summary for the doctor.
+
+## Patient
+Name: ${p.profile?.full_name ?? 'Unknown'}
+DOB: ${p.profile?.date_of_birth ?? 'N/A'} ${age != null ? `(${age} yrs)` : ''}
+Gender: ${p.profile?.gender ?? 'N/A'}
+Blood Group: ${p.passport.blood_group ?? 'N/A'}
+
+## Conditions
+${p.passport.conditions.join(', ') || 'None recorded'}
+
+## Allergies
+${p.passport.allergies.join(', ') || 'None recorded'}
+
+## Current Medications
+${p.passport.medicines.map(m => `- ${m.name} ${m.dosage} (${m.frequency})`).join('\n') || 'None recorded'}
+
+## Uploaded Reports (${p.reports.length})
+${p.reports.map(r => `- ${r.file_name} (${new Date(r.uploaded_at).toLocaleDateString()})`).join('\n') || 'None'}
+
+Produce a structured clinical summary with these exact sections:
+1. **Overview** – 2-3 sentence patient snapshot
+2. **Key Concerns** – bullet list of active issues
+3. **Medication Review** – brief note on current medications
+4. **Recommendations** – 2-3 actionable suggestions for the doctor`;
+
+  const res = await fetch(GROQ_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+      max_tokens: 600,
+    }),
+  });
+  if (!res.ok) throw new Error(`Groq ${res.status}`);
+  const json = await res.json();
+  return json.choices[0].message.content.trim();
+}
+
+// ── Single patient row (fetches its own data) ─────────────────────────────
+const PatientRow = ({ code, onSelect }: { code: string; onSelect: (d: PatientData) => void }) => {
+  const { data: passport, isLoading, isError } = useQuery({
+    queryKey: ['passport-code', code],
+    queryFn: () => getPassportByCode(code),
+  });
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile-for-passport', passport?.user_id],
+    queryFn: () => getUserProfileByInternalId(passport!.user_id),
+    enabled: !!passport?.user_id,
+  });
+
+  const { data: reports = [] } = useQuery({
+    queryKey: ['reports', passport?.id],
+    queryFn: () => getReports(passport!.id),
+    enabled: !!passport?.id,
+  });
+
+  if (isLoading) return (
+    <div className="card-base flex items-center gap-4 animate-pulse">
+      <div className="w-10 h-10 rounded-full bg-border shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3 bg-border rounded w-32" />
+        <div className="h-3 bg-border rounded w-48" />
+      </div>
+    </div>
+  );
+
+  if (isError || !passport) return (
+    <div className="card-base text-sm text-muted-foreground">
+      Could not load patient: <span className="font-mono">{code}</span>
+    </div>
+  );
+
+  const name = profile?.full_name ?? 'Unknown Patient';
+  const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const age = profile?.date_of_birth
+    ? Math.floor((Date.now() - new Date(profile.date_of_birth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+    : null;
+  const topCondition = passport.conditions[0] ?? passport.allergies[0] ?? 'No conditions recorded';
+
+  return (
+    <div className="card-base card-hover flex items-center gap-4">
+      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0">
+        {initials}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-dark text-sm">{name}{age != null ? `, ${age}` : ''}</p>
+        <p className="text-xs text-muted-foreground truncate">{topCondition} · {reports.length} report{reports.length !== 1 ? 's' : ''}</p>
+      </div>
+      <button
+        className="btn-primary text-xs whitespace-nowrap"
+        onClick={() => onSelect({ code, passport, profile: profile ?? null, reports })}
+      >
+        AI Summary
+      </button>
+    </div>
+  );
 };
 
+// ── Summary modal ─────────────────────────────────────────────────────────
+const SummaryModal = ({ patient, onClose }: { patient: PatientData; onClose: () => void }) => {
+  const [summary, setSummary] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchStructuredSummary(patient)
+      .then(setSummary)
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const name = patient.profile?.full_name ?? 'Unknown Patient';
+
+  // Render markdown-style bold (**text**) as <strong>
+  const renderText = (text: string) =>
+    text.split(/(\*\*[^*]+\*\*)/).map((part, i) =>
+      part.startsWith('**') ? <strong key={i}>{part.slice(2, -2)}</strong> : part
+    );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+      <div className="bg-background rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-border shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">{name}</p>
+              <p className="text-xs text-muted-foreground">AI Clinical Summary</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5">
+          {loading && (
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Generating clinical summary…</span>
+            </div>
+          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {summary && (
+            <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+              {summary.split('\n').map((line, i) => (
+                <p key={i} className={line.startsWith('#') ? 'font-bold mt-4 mb-1 text-primary' : 'mb-1'}>
+                  {renderText(line.replace(/^#+\s*/, ''))}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Main page ─────────────────────────────────────────────────────────────
 const DoctorPatients = () => {
-  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
+  const [patientCodes, setPatientCodes] = useState<string[]>(() =>
+    JSON.parse(localStorage.getItem('doctor_patients') ?? '[]')
+  );
+  const [selected, setSelected] = useState<PatientData | null>(null);
+
+  // Chat state
+  const [messages, setMessages] = useState<Message[]>([{
+    role: 'assistant',
+    text: "Hello Doctor! Ask me anything about your patients.",
+  }]);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to latest message
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, chatLoading]);
 
   const sendMessage = async () => {
     const text = input.trim();
-    if (!text || loading) return;
-
-    if (!GROQ_API_KEY) {
-      setMessages(prev => [...prev, { role: 'assistant', text: 'Error: VITE_GROQ_API_KEY is not set in your .env file.' }]);
-      return;
-    }
-
+    if (!text || chatLoading) return;
     const userMsg: Message = { role: 'user', text };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setLoading(true);
-
+    setChatLoading(true);
     try {
-      // Build messages: system prompt + history (skip UI greeting at index 0) + new user msg
-      const chatMessages = [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...[...messages.slice(1), userMsg].map(m => ({
-          role: m.role === 'assistant' ? 'assistant' : 'user',
-          content: m.text,
-        })),
-      ];
-
       const res = await fetch(GROQ_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
-          messages: chatMessages,
+          messages: [
+            { role: 'system', content: 'You are a medical assistant for doctors. Answer clinical questions concisely.' },
+            ...[...messages.slice(1), userMsg].map(m => ({ role: m.role, content: m.text })),
+          ],
           temperature: 0.4,
           max_tokens: 512,
         }),
       });
-
-      if (!res.ok) {
-        const errBody = await res.text();
-        console.error('[chat] Groq error:', res.status, errBody);
-        let detail = `HTTP ${res.status}`;
-        try {
-          const parsed = JSON.parse(errBody);
-          detail = parsed?.error?.message ?? detail;
-        } catch { /* not JSON */ }
-        setMessages(prev => [...prev, { role: 'assistant', text: `API error: ${detail}` }]);
-        return;
-      }
-
       const data = await res.json();
-      const reply: string = data.choices?.[0]?.message?.content ?? 'Sorry, I could not generate a response.';
+      const reply = data.choices?.[0]?.message?.content ?? 'No response.';
       setMessages(prev => [...prev, { role: 'assistant', text: reply.trim() }]);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('[chat] Failed:', err);
-      setMessages(prev => [...prev, { role: 'assistant', text: `Request failed: ${msg}` }]);
+    } catch (e: any) {
+      setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${e.message}` }]);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+      setChatLoading(false);
     }
   };
 
@@ -125,53 +258,52 @@ const DoctorPatients = () => {
 
           {/* Patient List */}
           <div className="lg:col-span-7">
-            <h2 className="mb-4">Recently Accessed Patients</h2>
-            <div className="space-y-3">
-              {patients.map((p) => (
-                <div key={p.name} className="card-base card-hover flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0">
-                    {p.initials}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-dark text-sm">{p.name}, {p.age}</p>
-                    <p className="text-xs text-muted-foreground">{p.condition} · {p.time}</p>
-                  </div>
-                  <Link to="/passport/demo" className="btn-ghost text-xs whitespace-nowrap">View Passport</Link>
-                </div>
-              ))}
+            <div className="flex items-center justify-between mb-4">
+              <h2>My Patients</h2>
+              {patientCodes.length > 0 && (
+                <button
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                  onClick={() => { localStorage.removeItem('doctor_patients'); setPatientCodes([]); }}
+                >
+                  Clear all
+                </button>
+              )}
             </div>
+
+            {patientCodes.length === 0 ? (
+              <div className="card-base text-center py-12 text-muted-foreground">
+                <p className="text-sm">No patients yet.</p>
+                <p className="text-xs mt-1">Scan a patient QR code to add them here.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {patientCodes.map(code => (
+                  <PatientRow key={code} code={code} onSelect={setSelected} />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* AI Chat */}
           <div className="lg:col-span-5">
             <div className="card-info overflow-hidden p-0 flex flex-col" style={{ height: '480px' }}>
-
-              {/* Header */}
               <div className="p-4 flex items-center gap-2 shrink-0" style={{ background: 'linear-gradient(135deg, #8FA7B0 0%, #9FB4BB 100%)' }}>
                 <Sparkles className="w-5 h-5 text-white" />
                 <h3 className="text-white font-semibold text-sm">Health Passport AI</h3>
                 <span className="bg-white/20 text-white text-[10px] font-bold rounded-full px-2 py-0.5 ml-auto">Beta</span>
               </div>
-
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div
-                      className={`rounded-2xl px-4 py-2.5 text-sm max-w-[85%] whitespace-pre-wrap ${
-                        msg.role === 'user'
-                          ? 'bg-card border border-primary/30 text-foreground'
-                          : 'text-white'
-                      }`}
+                      className={`rounded-2xl px-4 py-2.5 text-sm max-w-[85%] whitespace-pre-wrap ${msg.role === 'user' ? 'bg-card border border-primary/30 text-foreground' : 'text-white'}`}
                       style={msg.role === 'assistant' ? { backgroundColor: '#8FA7B0' } : undefined}
                     >
                       {msg.text}
                     </div>
                   </div>
                 ))}
-
-                {/* Typing indicator */}
-                {loading && (
+                {chatLoading && (
                   <div className="flex justify-start">
                     <div className="rounded-2xl px-4 py-2.5 text-sm text-white flex items-center gap-2" style={{ backgroundColor: '#8FA7B0' }}>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -181,32 +313,31 @@ const DoctorPatients = () => {
                 )}
                 <div ref={bottomRef} />
               </div>
-
-              {/* Input */}
               <div className="p-3 border-t border-border flex gap-2 shrink-0">
                 <input
                   type="text"
                   value={input}
                   onChange={e => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                   placeholder="Ask about a patient..."
-                  disabled={loading}
+                  disabled={chatLoading}
                   className="flex-1 px-3 py-2 text-sm border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
                 />
                 <button
                   onClick={sendMessage}
-                  disabled={!input.trim() || loading}
+                  disabled={!input.trim() || chatLoading}
                   className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4" />
                 </button>
               </div>
-
             </div>
           </div>
 
         </div>
       </div>
+
+      {selected && <SummaryModal patient={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 };

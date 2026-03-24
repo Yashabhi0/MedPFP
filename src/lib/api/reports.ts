@@ -1,25 +1,18 @@
 import { supabase } from '@/lib/supabase';
 import { UploadedReport } from '@/types';
-import { MedicalData } from '@/lib/api/ai';
 
 export async function createReport(
-  patientId: string,
+  passportId: string,
   fileUrl: string,
-  medicalData?: MedicalData
+  fileName: string
 ): Promise<UploadedReport> {
   const { data, error } = await supabase
-    .from('reports')
-    .insert([{
-      patient_id: patientId,
-      file_url: fileUrl,
-      conditions: medicalData?.conditions ?? [],
-      allergies: medicalData?.allergies ?? [],
-      medicines: medicalData?.medicines ?? [],
-    }])
+    .from('uploaded_reports')
+    .insert({ passport_id: passportId, file_url: fileUrl, file_name: fileName })
     .select()
     .single();
   if (error) {
-    console.error('Failed to save report:', error);
+    console.error('[createReport] failed:', error);
     throw error;
   }
   return data;
