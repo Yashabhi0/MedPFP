@@ -49,7 +49,7 @@ const Auth = () => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'Inter, sans-serif' }} className="flex-col md:flex-row">
 
       {/* ── LEFT — Hero ── */}
       <div style={{
@@ -142,8 +142,22 @@ const Auth = () => {
         justifyContent: 'center',
         padding: '32px 24px',
         overflowY: 'auto',
-      }}>
+        minHeight: '100vh',
+      }} className="w-full md:w-auto">
         <div style={{ width: '100%', maxWidth: '360px' }}>
+
+          {/* Mobile-only logo */}
+          <div className="flex md:hidden items-center gap-2 mb-8">
+            <div style={{
+              width: '34px', height: '34px', borderRadius: '10px',
+              background: '#8FA7B0',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '16px',
+            }}>🩺</div>
+            <span style={{ color: '#0F172A', fontWeight: '700', fontSize: '15px', letterSpacing: '-0.01em' }}>
+              Health Passport
+            </span>
+          </div>
 
           {/* Title */}
           <div style={{ marginBottom: '28px' }}>
