@@ -1,11 +1,13 @@
 import { useRef, useState, useEffect } from 'react';
-import { Sparkles, Send, Loader2, X, User } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Sparkles, Send, Loader2, X, User, Trash2 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useUser } from '@clerk/clerk-react';
 import Navbar from '../components/Navbar';
 import ProfileDropdown from '../components/auth/ProfileDropdown';
 import { getPassportByCode } from '../lib/api/passport';
 import { getUserProfileByInternalId } from '../lib/api/user';
 import { getReports } from '../lib/api/reports';
+import { getDoctorPatients, removeDoctorPatient } from '../lib/api/doctorPatients';
 import type { Passport, UserProfile, UploadedReport } from '../types';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY as string;
@@ -69,7 +71,11 @@ Produce a structured clinical summary with these exact sections:
 }
 
 // ── Single patient row (fetches its own data) ─────────────────────────────
-const PatientRow = ({ code, onSelect }: { code: string; onSelect: (d: PatientData) => void }) => {
+const PatientRow = ({ code, onSelect, onRemove }: {
+  code: string;
+  onSelect: (d: PatientData) => void;
+  onRemove: (code: string) => void;
+}) => {
   const { data: passport, isLoading, isError } = useQuery({
     queryKey: ['passport-code', code],
     queryFn: () => getPassportByCode(code),
@@ -124,6 +130,13 @@ const PatientRow = ({ code, onSelect }: { code: string; onSelect: (d: PatientDat
         onClick={() => onSelect({ code, passport, profile: profile ?? null, reports })}
       >
         AI Summary
+      </button>
+      <button
+        className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+        onClick={() => onRemove(code)}
+        title="Remove patient"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
       </button>
     </div>
   );
@@ -195,9 +208,23 @@ const SummaryModal = ({ patient, onClose }: { patient: PatientData; onClose: () 
 
 // ── Main page ─────────────────────────────────────────────────────────────
 const DoctorPatients = () => {
-  const [patientCodes, setPatientCodes] = useState<string[]>(() =>
-    JSON.parse(localStorage.getItem('doctor_patients') ?? '[]')
-  );
+  const { user } = useUser();
+  const doctorId = user?.id ?? '';
+  const queryClient = useQueryClient();
+
+  // Fetch patient codes from Supabase
+  const { data: patientCodes = [], isLoading: codesLoading } = useQuery({
+    queryKey: ['doctor-patients', doctorId],
+    queryFn: () => getDoctorPatients(doctorId),
+    enabled: !!doctorId,
+  });
+
+  // Remove mutation
+  const removeMutation = useMutation({
+    mutationFn: (code: string) => removeDoctorPatient(doctorId, code),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['doctor-patients', doctorId] }),
+  });
+
   const [selected, setSelected] = useState<PatientData | null>(null);
 
   // Chat state
@@ -263,14 +290,28 @@ const DoctorPatients = () => {
               {patientCodes.length > 0 && (
                 <button
                   className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-                  onClick={() => { localStorage.removeItem('doctor_patients'); setPatientCodes([]); }}
+                  onClick={() => {
+                    patientCodes.forEach(c => removeMutation.mutate(c));
+                  }}
                 >
                   Clear all
                 </button>
               )}
             </div>
 
-            {patientCodes.length === 0 ? (
+            {codesLoading ? (
+              <div className="space-y-3">
+                {[1,2,3].map(i => (
+                  <div key={i} className="card-base flex items-center gap-4 animate-pulse">
+                    <div className="w-10 h-10 rounded-full bg-border shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 bg-border rounded w-32" />
+                      <div className="h-3 bg-border rounded w-48" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : patientCodes.length === 0 ? (
               <div className="card-base text-center py-12 text-muted-foreground">
                 <p className="text-sm">No patients yet.</p>
                 <p className="text-xs mt-1">Scan a patient QR code to add them here.</p>
@@ -278,7 +319,12 @@ const DoctorPatients = () => {
             ) : (
               <div className="space-y-3">
                 {patientCodes.map(code => (
-                  <PatientRow key={code} code={code} onSelect={setSelected} />
+                  <PatientRow
+                    key={code}
+                    code={code}
+                    onSelect={setSelected}
+                    onRemove={(c) => removeMutation.mutate(c)}
+                  />
                 ))}
               </div>
             )}

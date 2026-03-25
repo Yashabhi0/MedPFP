@@ -1,12 +1,16 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import Navbar from '../components/Navbar';
 import ProfileDropdown from '../components/auth/ProfileDropdown';
 import QRScanner from '../components/QRScanner';
+import { addDoctorPatient } from '../lib/api/doctorPatients';
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useUser();
+  const doctorId = user?.id ?? 'anonymous';
   const [manualCode, setManualCode] = useState('');
   const [scanActive, setScanActive] = useState(true);
   const navigatedRef = useRef(false);
@@ -19,7 +23,7 @@ const DoctorDashboard = () => {
   const [cameraDenied, setCameraDenied] = useState(false);
 
   // Single entry point for all 3 methods
-  const handlePatientAccess = (raw: string) => {
+  const handlePatientAccess = async (raw: string) => {
     if (navigatedRef.current) return;
     navigatedRef.current = true;
     let code = raw.trim();
@@ -28,10 +32,16 @@ const DoctorDashboard = () => {
       code = url.pathname.split('/').filter(Boolean).pop() ?? raw;
     } catch { /* plain ID, use as-is */ }
 
-    // Persist to doctor's patient list in localStorage
-    const existing: string[] = JSON.parse(localStorage.getItem('doctor_patients') ?? '[]');
-    if (!existing.includes(code)) {
-      localStorage.setItem('doctor_patients', JSON.stringify([code, ...existing]));
+    // Persist to Supabase doctor_patients table
+    try {
+      await addDoctorPatient(doctorId, code);
+    } catch (e) {
+      console.warn('[DoctorDashboard] Could not save patient to DB:', e);
+      // Fallback to localStorage so navigation still works
+      const existing: string[] = JSON.parse(localStorage.getItem('doctor_patients') ?? '[]');
+      if (!existing.includes(code)) {
+        localStorage.setItem('doctor_patients', JSON.stringify([code, ...existing]));
+      }
     }
 
     navigate(`/passport/${code}`);
